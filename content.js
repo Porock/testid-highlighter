@@ -12,12 +12,10 @@ let currentTranslations = {
 // Стиль для подсветки
 const HIGHLIGHT_STYLE = `
     .testid-highlighter {
-        outline: 1px solid rgba(255,0,0,0.4) !important;
-        background-color: transparent !important;
+        box-shadow: inset 0 0 0 1px rgba(255,0,0,0.4) !important;
     }
     .testid-highlighter:hover {
-        outline: 2px solid #ff0000 !important;
-        background-color: rgba(255,0,0,0.15) !important;
+        box-shadow: inset 0 0 0 2px #ff0000, inset 0 0 8px rgba(255,0,0,0.3) !important;
     }
     .testid-tooltip {
         position: fixed;
@@ -85,6 +83,26 @@ function getAttributeInfo(element, attributes) {
         }
     }
     return null;
+}
+
+// Находит ближайший к курсору элемент с атрибутом теста
+// Начинает с element и поднимается до ближайшего .testid-highlighter
+function findNearestTestAttribute(element) {
+    const attrs = currentAttributes.length > 0 ? currentAttributes : DEFAULT_ATTRIBUTES;
+    const highlightedAncestor = element.closest('.testid-highlighter');
+    if (!highlightedAncestor) return null;
+    
+    let current = element;
+    while (current && current !== highlightedAncestor) {
+        const attrInfo = getAttributeInfo(current, attrs);
+        if (attrInfo) {
+            return current;
+        }
+        current = current.parentElement;
+    }
+    
+    // Если не нашли на пути, проверяем сам highlightedAncestor
+    return getAttributeInfo(highlightedAncestor, attrs) ? highlightedAncestor : null;
 }
 
 function showTooltip(element, x, y) {
@@ -171,7 +189,7 @@ const refreshHighlight = debounce(() => {
 
 // Инициализация при загрузке страницы
 function initialize() {
-    chrome.storage.sync.get(['enabled', 'customAttributes'], (data) => {
+    chrome.storage.local.get(['enabled', 'customAttributes'], (data) => {
         isEnabled = data.enabled || false;
         currentAttributes = data.customAttributes || DEFAULT_ATTRIBUTES;
         
@@ -185,6 +203,10 @@ function initialize() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'updateHighlight') {
         isEnabled = request.enabled;
+        // Обновляем атрибуты если они переданы
+        if (request.attributes) {
+            currentAttributes = request.attributes;
+        }
         if (isEnabled) {
             highlightAttributes(currentAttributes);
         } else {
@@ -280,31 +302,46 @@ initialize();
 // Создаём тултип
 createTooltip();
 
-// Обработчики событий для тултипа
-document.addEventListener('mouseover', (e) => {
-    if (!isEnabled) return;
-    const target = e.target;
-    if (target.classList.contains('testid-highlighter')) {
-        showTooltip(target, e.clientX, e.clientY);
-    }
-});
-
-document.addEventListener('mouseout', (e) => {
-    const target = e.target;
-    if (target.classList.contains('testid-highlighter')) {
-        hideTooltip();
-    }
-});
+// Обработчики для тултипа - используем mousemove + elementFromPoint для совместимости
+let lastHoveredElement = null;
 
 document.addEventListener('mousemove', (e) => {
-    if (tooltip && tooltip.style.display !== 'none' && tooltipTarget) {
+    if (!isEnabled) return;
+    
+    // Используем elementFromPoint для надёжного определения элемента
+    const element = document.elementFromPoint(e.clientX, e.clientY);
+    if (!element) return;
+    
+    const target = element.closest('.testid-highlighter');
+    
+    if (target && target !== lastHoveredElement) {
+        lastHoveredElement = target;
+        // Находим ближайший элемент с атрибутом теста
+        const nearestWithAttr = findNearestTestAttribute(element);
+        if (nearestWithAttr) {
+            showTooltip(nearestWithAttr, e.clientX, e.clientY);
+        }
+    } else if (!target && lastHoveredElement) {
+        lastHoveredElement = null;
+        hideTooltip();
+    } else if (target && tooltip && tooltip.style.display !== 'none') {
         positionTooltip(e.clientX, e.clientY);
+    }
+});
+
+// Скрываем тултип когда курсор уходит с подсвеченного элемента
+document.addEventListener('mouseout', (e) => {
+    const element = document.elementFromPoint(e.clientX, e.clientY);
+    if (!element || !element.closest('.testid-highlighter')) {
+        lastHoveredElement = null;
+        hideTooltip();
     }
 });
 
 // Копирование в буфер обмена
 document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'c' && tooltip && tooltip.style.display !== 'none') {
+    // Используем e.code для независимости от раскладки
+    if (e.ctrlKey && e.code === 'KeyC' && tooltip && tooltip.style.display !== 'none') {
         const attrName = tooltip.querySelector('.attr-name');
         const attrValue = tooltip.querySelector('.attr-value');
         if (attrName && attrValue) {

@@ -44,14 +44,31 @@
             background: var(--background);
             border-radius: 4px;
         }
-        .attribute-item span {
-            flex: 1;
-            font-size: 14px;
-        }
         .attribute-item button {
             padding: 4px 8px;
             margin: 0 0 0 8px;
             font-size: 12px;
+        }
+        .attribute-item .drag-handle {
+            cursor: grab;
+            padding: 4px 8px;
+            color: #888;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        .attribute-item .attr-name {
+            flex: 1;
+            font-size: 14px;
+        }
+        .attribute-item .drag-handle:active {
+            cursor: grabbing;
+        }
+        .attribute-item.dragging {
+            opacity: 0.5;
+            background: #e0e0e0;
+        }
+        .attribute-item.drag-over {
+            border-bottom: 2px solid #ff6b6b;
         }
         .add-section {
             display: flex;
