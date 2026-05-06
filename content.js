@@ -9,6 +9,11 @@ let currentTranslations = {
     copied: "Copied!"
 };
 
+// Переменные для кнопки-глаз
+let eyeButton = null;
+let isDragging = false;
+let dragOffset = { x: 0, y: 0 };
+
 // Стиль для подсветки
 const HIGHLIGHT_STYLE = `
     .testid-highlighter {
@@ -46,7 +51,29 @@ const HIGHLIGHT_STYLE = `
     }
 `;
 
-// Вставляем стиль в документ
+// Стиль для плавающей кнопки-глаз
+const EYE_BUTTON_STYLE = `
+    .testid-eye-btn {
+        position: fixed !important;
+        z-index: 9999 !important;
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 32px !important;
+        cursor: pointer !important;
+        user-select: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: rgba(255,255,255,0.95) !important;
+        border-radius: 50% !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
+        text-decoration: none !important;
+    }
+    .testid-eye-btn:active { transform: scale(0.95) !important; }
+    .testid-eye-btn.dragging { opacity: 0.7 !important; cursor: grabbing !important; }
+`;
+
+// Вставляем стили в документ
 let styleElement = null;
 function injectHighlightStyle() {
     if (!styleElement) {
@@ -187,6 +214,121 @@ const refreshHighlight = debounce(() => {
     }
 }, 1000);
 
+// Функции для кнопки-глаз
+function injectEyeStyle() {
+    if (!document.getElementById('testid-eye-style')) {
+        const styleEl = document.createElement('style');
+        styleEl.id = 'testid-eye-style';
+        styleEl.textContent = EYE_BUTTON_STYLE;
+        document.head.appendChild(styleEl);
+    }
+}
+
+function updateEyeState(enabled) {
+    if (!eyeButton) return;
+    eyeButton.textContent = enabled ? '👁️' : '👁️‍🗨️';
+    eyeButton.title = enabled ? currentTranslations.eyeEnabled || 'Подсветка включена (клик для выключения)' : currentTranslations.eyeDisabled || 'Подсветка выключена (клик для включения)';
+}
+
+function removeHighlight() {
+    document.querySelectorAll('.testid-highlighter').forEach(el => {
+        el.classList.remove('testid-highlighter');
+    });
+}
+
+function createEyeButton() {
+    if (eyeButton) return;
+    
+    injectEyeStyle();
+    
+    eyeButton = document.createElement('div');
+    eyeButton.className = 'testid-eye-btn';
+    eyeButton.textContent = '👁️';
+    eyeButton.title = currentTranslations.eyeEnabled || 'Подсветка включена (клик для выключения)';
+    
+    // Загружаем позицию из storage или используем默认值
+    chrome.storage.local.get(['eyePosition'], (data) => {
+        const pos = data.eyePosition || { right: 20, bottom: 20 };
+        eyeButton.style.right = pos.right + 'px';
+        eyeButton.style.bottom = pos.bottom + 'px';
+    });
+    
+    // Клик - переключение подсветки
+    eyeButton.addEventListener('click', (e) => {
+        if (isDragging) return;
+        isEnabled = !isEnabled;
+        chrome.storage.local.set({ enabled: isEnabled });
+        
+        if (isEnabled) {
+            highlightAttributes(currentAttributes);
+        } else {
+            removeHighlight();
+        }
+        updateEyeState(isEnabled);
+    });
+    
+    // Drag - перетаскивание
+    const DRAG_THRESHOLD = 5;
+    
+    eyeButton.addEventListener('mousedown', (e) => {
+        isDragging = false;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const rect = eyeButton.getBoundingClientRect();
+        dragOffset.x = e.clientX - rect.left;
+        dragOffset.y = e.clientY - rect.top;
+        
+        const onMouseMove = (moveEvent) => {
+            const dx = Math.abs(moveEvent.clientX - startX);
+            const dy = Math.abs(moveEvent.clientY - startY);
+            
+            if (!isDragging && (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD)) {
+                isDragging = true;
+                eyeButton.classList.add('dragging');
+            }
+            
+            if (isDragging) {
+                const newRight = window.innerWidth - moveEvent.clientX - dragOffset.x;
+                const newBottom = window.innerHeight - moveEvent.clientY - dragOffset.y;
+                
+                eyeButton.style.right = Math.max(0, newRight) + 'px';
+                eyeButton.style.bottom = Math.max(0, newBottom) + 'px';
+            }
+        };
+        
+        const onMouseUp = (upEvent) => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            
+            eyeButton.classList.remove('dragging');
+            
+            // Сохраняем позицию только если реально перетаскивали
+            if (isDragging) {
+                const rect = eyeButton.getBoundingClientRect();
+                const pos = {
+                    right: window.innerWidth - rect.right,
+                    bottom: window.innerHeight - rect.bottom
+                };
+                chrome.storage.local.set({ eyePosition: pos });
+            }
+            
+            setTimeout(() => { isDragging = false; }, 100);
+        };
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+    
+    document.body.appendChild(eyeButton);
+}
+
+function hideEyeButton() {
+    if (eyeButton) {
+        eyeButton.remove();
+        eyeButton = null;
+    }
+}
+
 // Инициализация при загрузке страницы
 function initialize() {
     chrome.storage.local.get(['enabled', 'customAttributes'], (data) => {
@@ -195,6 +337,8 @@ function initialize() {
         
         if (isEnabled) {
             highlightAttributes(currentAttributes);
+            createEyeButton();
+            updateEyeState(true);
         }
     });
 }
@@ -226,6 +370,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     if (request.action === 'updateLanguage') {
         currentTranslations = request.translations;
+        if (eyeButton) {
+            updateEyeState(isEnabled);
+        }
+    }
+    
+    if (request.action === 'showEye') {
+        isEnabled = true;
+        chrome.storage.local.set({ enabled: true });
+        highlightAttributes(currentAttributes);
+        createEyeButton();
+        updateEyeState(true);
+    }
+    
+    if (request.action === 'hideEye') {
+        isEnabled = false;
+        chrome.storage.local.set({ enabled: false });
+        removeHighlight();
+        hideEyeButton();
     }
 });
 

@@ -52,7 +52,9 @@ function notifyContentScript() {
                 language: currentLanguage,
                 translations: {
                     copyHint: t('copyHint'),
-                    copied: t('copied')
+                    copied: t('copied'),
+                    eyeEnabled: t('eyeEnabled'),
+                    eyeDisabled: t('eyeDisabled')
                 }
             });
         }
@@ -180,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     
     chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName === 'sync') {
+        if (areaName === 'sync' || areaName === 'local') {
             if (changes.enabled) {
                 toggle.checked = changes.enabled.newValue;
             }
@@ -201,18 +203,15 @@ document.addEventListener('DOMContentLoaded', () => {
     toggle.addEventListener('change', () => {
         const enabled = toggle.checked;
         
-        // Сначала сохраняем
-        chrome.storage.local.set({ enabled }, () => {
-            // Затем отправляем сообщение с актуальными атрибутами
-            chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-                if (tabs[0]) {
-                    chrome.tabs.sendMessage(tabs[0].id, { 
-                        action: 'updateHighlight', 
-                        enabled,
-                        attributes: currentAttributes
-                    });
-                }
-            });
+        // Сохраняем и отправляем сообщение
+        chrome.storage.local.set({ enabled });
+        
+        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, { 
+                    action: enabled ? 'showEye' : 'hideEye'
+                });
+            }
         });
     });
     

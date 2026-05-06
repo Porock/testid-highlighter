@@ -1,114 +1,132 @@
 # TestID Highlighter
 
-Браузерное расширение для Chrome (Manifest V3), которое подсвечивает элементы на странице с атрибутами автотестов.
+Chrome browser extension (Manifest V3) that highlights elements on the page with test automation attributes.
 
-## Возможности
+## Features
 
-- **Подсветка элементов** с популярными атрибутами автотестов:
+- **Element highlighting** with popular test automation attributes:
   - `data-test-id`, `data-cy`, `data-qa`, `data-test`, `data-testid`, `data-hook`, `data-e2e`
-  
-- **Умная подсветка:**
-  - Минимальная подсветка по умолчанию (тонкий контур)
-  - Усиленная подсветка при наведении
-  - Тултип с атрибутом и подсказкой для копирования
-  
-- **Копирование в буфер обмена:** нажмите Ctrl+C при наведении на подсвеченный элемент
 
-- **Динамическая подсветка:** автоматически обновляется при изменениях на странице (AJAX, динамический контент)
+- **Smart highlighting:**
+  - Minimal highlight by default (thin inset outline)
+  - Enhanced highlight on hover
+  - Tooltip showing attribute and copy hint
 
-- **SPA поддержка:** работает с React, Vue, Angular и другими SPA фреймворками
+- **Copy to clipboard:** press Ctrl+C while hovering over highlighted element
 
-- **Многоязычность:** поддержка английского, русского и китайского языков с автоопределением языка браузера
+- **Drag & drop attributes:** reorder attributes in popup to change priority
 
-- **Синхронизация:** настройки синхронизируются между устройствами через Chrome аккаунт
+- **Floating eye button:**
+  - Appears when highlighting is enabled
+  - Click to toggle highlight on/off
+  - Drag to reposition (position saved)
+  - Shows current state (👁️ enabled / 👁️‍🗨️ disabled)
 
-## Установка
+- **Dynamic highlighting:** automatically updates when page changes (AJAX, dynamic content)
 
-1. Откройте `chrome://extensions/` в браузере Chrome
-2. Включите "Режим разработчика" (переключатель в правом верхнем углу)
-3. Нажмите "Загрузить распакованное расширение"
-4. Выберите папку `testid-highlighter`
+- **SPA support:** works with React, Vue, Angular and other SPA frameworks
 
-## Использование
+- **i18n:** English, Russian, and Chinese with auto-detection of browser language
 
-1. Нажмите на иконку расширения в панели инструментов браузера
-2. Включите переключатель "Подсвечивать элементы"
-3. (Опционально) Добавьте собственные атрибуты для поиска
-4. Элементы с указанными атрибутами будут подсвечены
+- **Sync:** settings sync across Chrome devices
 
-### Копирование атрибута
+## Installation
 
-1. Наведите курсор на подсвеченный элемент
-2. Появится тултип с атрибутом (например: `data-test-id="loginButton"`)
-3. Нажмите `Ctrl+C` для копирования в буфер обмена
+1. Open `chrome://extensions/` in Chrome browser
+2. Enable "Developer mode" (toggle in top right corner)
+3. Click "Load unpacked"
+4. Select the `testid-highlighter` folder
 
-### Смена языка
+## Usage
 
-1. Выберите язык из выпадающего списка в правом верхнем углу popup
-2. Интерфейс и подсказки тултипа обновятся на выбранном языке
+1. Click the extension icon in the browser toolbar
+2. Enable the "Highlight elements" toggle
+3. (Optional) Add custom attributes to search for
+4. Elements with specified attributes will be highlighted
 
-## Структура проекта
+### Copy Attribute
+
+1. Hover over highlighted element
+2. Tooltip appears with attribute (e.g., `data-test-id="loginButton"`)
+3. Press `Ctrl+C` to copy to clipboard
+
+### Floating Eye Button
+
+When highlighting is enabled, a floating eye button appears in the bottom-right corner:
+- **Click** to toggle highlighting on/off
+- **Drag** to reposition button anywhere on screen
+- Position is saved and restored on page reload
+
+### Change Language
+
+1. Select language from dropdown in top right corner of popup
+2. Interface and tooltip hints will update to selected language
+
+## Project Structure
 
 ```
 testid-highlighter/
-├── manifest.json       # Конфигурация расширения (Manifest V3)
-├── popup.html          # UI popup окна
-├── popup.js            # Логика popup, i18n
-├── content.js          # Content script для подсветки элементов
-├── locales.js          # Словарь переводов (en, ru, zh)
-├── water.css           # Стили для popup
-├── README.md           # Документация
-└── icons/              # SVG иконки расширения
+├── manifest.json       # Extension configuration (Manifest V3)
+├── popup.html          # Popup UI
+├── popup.js            # Popup logic, i18n, drag & drop
+├── content.js          # Content script for element highlighting
+├── locales.js          # Translation dictionary (en, ru, zh)
+├── water.css           # Base styles for popup
+├── README.md           # English documentation
+├── README.ru.md        # Russian documentation
+└── icons/              # SVG extension icons
     ├── icon16.svg
     ├── icon32.svg
     ├── icon48.svg
     └── icon128.svg
 ```
 
-## Как это работает
+## How It Works
 
 ### Content Script (content.js)
-- Автоматически загружается на все страницы при `document_idle`
-- Читает настройки из `chrome.storage.sync`
-- Применяет CSS класс `.testid-highlighter` для подсветки
-- Отслеживает изменения DOM через MutationObserver (debounce 1000ms)
-- Перехватывает SPA навигацию (pushState, replaceState, popstate)
-- Показывает тултип при наведении с z-index 10000 (всегда поверх модалок)
+- Automatically loads on all pages at `document_idle`
+- Reads settings from `chrome.storage.local`
+- Applies `.testid-highlighter` CSS class for highlighting
+- Tracks DOM changes via MutationObserver (debounce 1000ms)
+- Intercepts SPA navigation (pushState, replaceState, popstate)
+- Shows tooltip on hover with z-index 10000 (always on top of modals)
+- Creates floating eye button for quick toggle
 
 ### Popup (popup.html + popup.js)
-- Компактный интерфейс (320px ширина)
-- Переключатель вкл/выкл подсветки
-- Редактируемый список атрибутов с возможностью добавления/удаления
-- Выбор языка из выпадающего списка
-- Автоопределение языка браузера при первом запуске
+- Compact interface (320px width)
+- Toggle to enable/disable highlighting
+- Editable attribute list with add/remove/reorder (drag & drop)
+- Language selector dropdown
+- Auto-detects browser language on first run
 
 ### Storage
-- `enabled` - включена/выключена подсветка
-- `customAttributes` - массив атрибутов для поиска
-- `language` - выбранный язык (en/ru/zh)
+- `enabled` - highlight on/off
+- `customAttributes` - array of attributes to search
+- `language` - selected language (en/ru/zh)
+- `eyePosition` - floating button position
 
-## Стили подсветки
+## Highlight Styles
 
-- **По умолчанию:** тонкий полупрозрачный контур (1px, rgba(255,0,0,0.4))
-- **При наведении:** усиленный контур (2px solid red) + полупрозрачный фон
-- **Тултип:** чёрный фон с белым текстом, всегда поверх модальных окон
+- **Default:** thin semi-transparent inset outline (1px)
+- **Hover:** enhanced inset outline (2px) + glow effect
+- **Tooltip:** dark background with white text, always on top
 
-## Добавление нового языка
+## Adding New Language
 
-Для добавления нового языка:
-1. Добавьте ключ в объект `translations` в файле `locales.js`
-2. Перезагрузите расширение в Chrome
+To add a new language:
+1. Add key to `translations` object in `locales.js`
+2. Reload extension in Chrome
 
-Пример:
+Example:
 ```javascript
 fr: {
     name: "Français",
     title: "TestID Highlighter",
     toggleLabel: "Mettre en évidence les éléments",
-    // ... остальные поля
+    // ... other fields
 }
 ```
 
-## Лицензия
+## License
 
 MIT
