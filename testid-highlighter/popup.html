@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TestID Highlighter</title>
+    <link rel="stylesheet" href="water.css">
+    <style>
+        body {
+            width: 320px;
+            padding: 16px;
+            margin: 0;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        h1 {
+            font-size: 1.4em;
+            margin: 0;
+        }
+        #language-select {
+            padding: 4px 8px;
+            font-size: 12px;
+            margin: 0;
+        }
+        .toggle-section {
+            margin-bottom: 16px;
+        }
+        #attributes-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 8px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .attribute-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            background: var(--background);
+            border-radius: 4px;
+        }
+        .attribute-item span {
+            flex: 1;
+            font-size: 14px;
+        }
+        .attribute-item button {
+            padding: 4px 8px;
+            margin: 0 0 0 8px;
+            font-size: 12px;
+        }
+        .add-section {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .add-section input {
+            flex: 1;
+            margin: 0;
+        }
+        .add-section button {
+            margin: 0;
+            padding: 10px 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 data-i18n="title">TestID Highlighter</h1>
+        <select id="language-select"></select>
+    </div>
+    
+    <div class="toggle-section">
+        <label>
+            <input type="checkbox" id="toggle-highlight">
+            <span data-i18n="toggleLabel">Highlight elements</span>
+        </label>
+    </div>
+    
+    <ul id="attributes-list"></ul>
+    
+    <div class="add-section">
+        <input type="text" id="new-attribute" data-i18n-placeholder="addPlaceholder" placeholder="Add attribute...">
+        <button id="add-btn" data-i18n="addButton">+</button>
+    </div>
+    
+    <script src="locales.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>
