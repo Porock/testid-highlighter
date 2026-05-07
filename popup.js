@@ -1,13 +1,14 @@
-const DEFAULT_ATTRIBUTES = ['data-test-id', 'data-cy', 'data-qa', 'data-test', 'data-testid', 'data-hook', 'data-e2e'];
+(function() {
+    'use strict';
 
-let currentLanguage = 'en';
-let allowedUrls = [];
-let currentAttributes = [...DEFAULT_ATTRIBUTES];
-let draggedIndex = null;
+    let currentLanguage = 'en';
+    let allowedUrls = [];
+    let currentAttributes = [...DEFAULT_ATTRIBUTES];
+    let draggedIndex = null;
 
-function t(key) {
-    return translations[currentLanguage]?.[key] || translations['en'][key] || key;
-}
+    function t(key) {
+        return translations[currentLanguage]?.[key] || translations['en'][key] || key;
+    }
 
 function updateTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -398,4 +399,4 @@ document.addEventListener('DOMContentLoaded', () => {
             addAttrBtn.click();
         }
     });
-});
+})();

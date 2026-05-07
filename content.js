@@ -1,18 +1,22 @@
-// Стандартные атрибуты автотестов
-const DEFAULT_ATTRIBUTES = ['data-test-id', 'data-cy', 'data-qa', 'data-test', 'data-testid', 'data-hook', 'data-e2e'];
+(function() {
+    'use strict';
 
-// Кэш состояния
-let isEnabled = false;
-let currentAttributes = [];
-let currentTranslations = {
-    copyHint: "Ctrl+C to copy",
-    copied: "Copied!"
-};
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
 
-// Переменные для кнопки-глаз
-let eyeButton = null;
-let isDragging = false;
-let dragOffset = { x: 0, y: 0 };
+    let isEnabled = false;
+    let currentAttributes = [];
+    let currentTranslations = {
+        copyHint: "Ctrl+C to copy",
+        copied: "Copied!"
+    };
+
+    let eyeButton = null;
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
 
 // Стиль для подсветки
 const HIGHLIGHT_STYLE = `
@@ -137,7 +141,7 @@ function showTooltip(element, x, y) {
     const attrInfo = getAttributeInfo(element, currentAttributes);
     if (!attrInfo) return;
     
-    tooltip.innerHTML = `<span class="attr-name">${attrInfo.name}</span>=<span class="attr-value">"${attrInfo.value}"</span><span class="hint">${currentTranslations.copyHint}</span>`;
+    tooltip.innerHTML = `<span class="attr-name">${escapeHtml(attrInfo.name)}</span>=<span class="attr-value">"${escapeHtml(attrInfo.value)}"</span><span class="hint">${escapeHtml(currentTranslations.copyHint)}</span>`;
     tooltip.showPopover();
     positionTooltip(x, y);
     tooltipTarget = element;
@@ -585,3 +589,5 @@ if (document.readyState === 'loading') {
     startObserver();
     setupSPANavigation();
 }
+
+})();
