@@ -10,14 +10,21 @@ Chrome browser extension (Manifest V3) that highlights elements on the page with
 - **Smart highlighting:**
   - Minimal highlight by default (thin inset outline)
   - Enhanced highlight on hover
-  - Tooltip showing attribute and copy hint
+  - Tooltip showing attribute and copy hint (uses Popover API - always on top)
+
+- **URL-based activation:** Add pages to allowed list - highlighting works automatically on those domains
+
+- **Wildcard support:** Use `*.example.com` to match subdomains
+
+- **Attribute management:**
+  - Add/remove custom attributes
+  - Drag & drop to reorder priority
+  - Toggle attributes on/off without deleting (checkbox)
 
 - **Copy to clipboard:** press Ctrl+C while hovering over highlighted element
 
-- **Drag & drop attributes:** reorder attributes in popup to change priority
-
 - **Floating eye button:**
-  - Appears when highlighting is enabled
+  - Appears automatically on allowed pages
   - Click to toggle highlight on/off
   - Drag to reposition (position saved)
   - Shows current state (👁️ enabled / 👁️‍🗨️ disabled)
@@ -40,15 +47,30 @@ Chrome browser extension (Manifest V3) that highlights elements on the page with
 ## Usage
 
 1. Click the extension icon in the browser toolbar
-2. Enable the "Highlight elements" toggle
-3. (Optional) Add custom attributes to search for
-4. Elements with specified attributes will be highlighted
+2. Add current page to allowed list using "Add current page" button (or manually enter URLs like `*.example.com`)
+3. Elements on allowed pages with test attributes will be highlighted automatically
+4. (Optional) Customize attributes list - add, remove, reorder, toggle on/off
 
 ### Copy Attribute
 
 1. Hover over highlighted element
 2. Tooltip appears with attribute (e.g., `data-test-id="loginButton"`)
 3. Press `Ctrl+C` to copy to clipboard
+
+### URL Management
+
+- **Add current page:** Adds current domain to allowed list
+- **Manual add:** Enter URLs manually (supports wildcards like `*.example.com`)
+- **Edit:** Click on URL in list to edit
+- **Delete:** Click ✕ to remove from list
+- **Auto-hide:** "Add current page" button hides when current page is already in list
+
+### Attribute Management
+
+- **Add:** Enter attribute name and click +
+- **Remove:** Click ✕ to delete
+- **Toggle:** Use checkbox to enable/disable attribute without deleting
+- **Reorder:** Drag & drop to change priority (top = highest priority)
 
 ### Floating Eye Button
 
@@ -86,22 +108,23 @@ testid-highlighter/
 ### Content Script (content.js)
 - Automatically loads on all pages at `document_idle`
 - Reads settings from `chrome.storage.local`
+- Checks if current domain is in allowed URLs list
 - Applies `.testid-highlighter` CSS class for highlighting
 - Tracks DOM changes via MutationObserver (debounce 1000ms)
 - Intercepts SPA navigation (pushState, replaceState, popstate)
-- Shows tooltip on hover with z-index 10000 (always on top of modals)
+- Shows tooltip on hover using Popover API (always on top)
 - Creates floating eye button for quick toggle
 
 ### Popup (popup.html + popup.js)
 - Compact interface (320px width)
-- Toggle to enable/disable highlighting
-- Editable attribute list with add/remove/reorder (drag & drop)
+- URL management with wildcard support
+- Attribute list with toggle, add, remove, drag & drop reorder
 - Language selector dropdown
 - Auto-detects browser language on first run
 
 ### Storage
-- `enabled` - highlight on/off
-- `customAttributes` - array of attributes to search
+- `allowedUrls` - array of allowed domains/patterns
+- `customAttributes` - array of attributes (with :disabled suffix for toggled off)
 - `language` - selected language (en/ru/zh)
 - `eyePosition` - floating button position
 
@@ -109,7 +132,7 @@ testid-highlighter/
 
 - **Default:** thin semi-transparent inset outline (1px)
 - **Hover:** enhanced inset outline (2px) + glow effect
-- **Tooltip:** dark background with white text, always on top
+- **Tooltip:** dark background with white text, uses Popover API for top layer
 
 ## Adding New Language
 
@@ -122,8 +145,7 @@ Example:
 fr: {
     name: "Français",
     title: "TestID Highlighter",
-    toggleLabel: "Mettre en évidence les éléments",
-    // ... other fields
+    // ... add other fields
 }
 ```
 

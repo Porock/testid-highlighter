@@ -97,8 +97,9 @@ let tooltipTarget = null;
 function createTooltip() {
     if (tooltip) return;
     tooltip = document.createElement('div');
+    tooltip.setAttribute('popover', '');
+    tooltip.popover = 'manual';
     tooltip.className = 'testid-tooltip';
-    tooltip.style.display = 'none';
     document.body.appendChild(tooltip);
 }
 
@@ -137,13 +138,13 @@ function showTooltip(element, x, y) {
     if (!attrInfo) return;
     
     tooltip.innerHTML = `<span class="attr-name">${attrInfo.name}</span>=<span class="attr-value">"${attrInfo.value}"</span><span class="hint">${currentTranslations.copyHint}</span>`;
-    tooltip.style.display = 'block';
+    tooltip.showPopover();
     positionTooltip(x, y);
     tooltipTarget = element;
 }
 
 function hideTooltip() {
-    tooltip.style.display = 'none';
+    tooltip.hidePopover();
     tooltipTarget = null;
 }
 
@@ -185,6 +186,22 @@ function debounce(fn, delay) {
         clearTimeout(timeout);
         timeout = setTimeout(() => fn.apply(this, args), delay);
     };
+}
+
+// Функция проверки URL по паттерну
+function isUrlAllowed(hostname, patterns) {
+    if (!patterns || patterns.length === 0) return false;
+    
+    for (const pattern of patterns) {
+        if (pattern.startsWith('*.')) {
+            const base = pattern.slice(2);
+            if (hostname === base || hostname.endsWith('.' + base)) {
+                return true;
+            }
+        }
+        if (hostname === pattern) return true;
+    }
+    return false;
 }
 
 // Подсветка элементов с указанными атрибутами
@@ -331,14 +348,24 @@ function hideEyeButton() {
 
 // Инициализация при загрузке страницы
 function initialize() {
-    chrome.storage.local.get(['enabled', 'customAttributes'], (data) => {
-        isEnabled = data.enabled || false;
-        currentAttributes = data.customAttributes || DEFAULT_ATTRIBUTES;
+    chrome.storage.local.get(['allowedUrls', 'customAttributes'], (data) => {
+        const allAttributes = data.customAttributes || DEFAULT_ATTRIBUTES;
+        const allowedUrls = data.allowedUrls || [];
         
-        if (isEnabled) {
+        // Фильтруем только включённые атрибуты (без :disabled)
+        currentAttributes = allAttributes.filter(attr => !attr.includes(':disabled'));
+        
+        const currentHost = window.location.hostname;
+        const isAllowed = isUrlAllowed(currentHost, allowedUrls);
+        
+        if (isAllowed) {
+            isEnabled = true;
             highlightAttributes(currentAttributes);
             createEyeButton();
             updateEyeState(true);
+        } else {
+            isEnabled = false;
+            hideEyeButton();
         }
     });
 }
@@ -385,9 +412,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     if (request.action === 'hideEye') {
         isEnabled = false;
-        chrome.storage.local.set({ enabled: false });
         removeHighlight();
         hideEyeButton();
+    }
+    
+    if (request.action === 'updateAllowedUrls') {
+        const allowedUrls = request.allowedUrls || [];
+        const currentHost = window.location.hostname;
+        const isAllowed = isUrlAllowed(currentHost, allowedUrls);
+        
+        if (isAllowed && !isEnabled) {
+            isEnabled = true;
+            highlightAttributes(currentAttributes);
+            createEyeButton();
+            updateEyeState(true);
+        } else if (!isAllowed && isEnabled) {
+            isEnabled = false;
+            removeHighlight();
+            hideEyeButton();
+        }
     }
 });
 
@@ -486,7 +529,7 @@ document.addEventListener('mousemove', (e) => {
     } else if (!target && lastHoveredElement) {
         lastHoveredElement = null;
         hideTooltip();
-    } else if (target && tooltip && tooltip.style.display !== 'none') {
+    } else if (target && tooltip && tooltipTarget) {
         positionTooltip(e.clientX, e.clientY);
     }
 });

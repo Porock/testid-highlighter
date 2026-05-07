@@ -26,14 +26,87 @@
             font-size: 12px;
             margin: 0;
         }
-        .toggle-section {
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: var(--fg-default);
+        }
+        .add-url-section {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .add-url-section button {
+            padding: 8px 12px;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        #allowed-urls-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 12px 0;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .url-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            background: var(--background);
+            border-radius: 4px;
+        }
+        .url-item input[type="text"] {
+            flex: 1;
+            font-size: 13px;
+            padding: 4px 0;
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            color: var(--fg-default);
+        }
+        .url-item input[type="text"]:focus {
+            outline: none;
+        }
+        .url-item button {
+            padding: 4px 8px;
+            margin: 0 0 0 8px;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        .manual-add-section {
+            display: flex;
+            gap: 8px;
             margin-bottom: 16px;
+        }
+        .manual-add-section input {
+            flex: 1;
+            margin: 0;
+            font-size: 13px;
+        }
+        .manual-add-section button {
+            margin: 0;
+            padding: 8px 12px;
+        }
+        .no-items {
+            color: var(--fg-muted);
+            font-size: 12px;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+        
+        /* Attributes section */
+        .attributes-section {
+            margin-top: 20px;
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
         }
         #attributes-list {
             list-style: none;
             padding: 0;
             margin: 0 0 8px 0;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
         }
         .attribute-item {
@@ -43,6 +116,17 @@
             margin-bottom: 4px;
             background: var(--background);
             border-radius: 4px;
+        }
+        .attribute-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .attribute-item .attr-name {
+            flex: 1;
+            font-size: 13px;
+        }
+        .attribute-item.disabled .attr-name {
+            text-decoration: line-through;
+            color: var(--fg-muted);
         }
         .attribute-item button {
             padding: 4px 8px;
@@ -56,10 +140,6 @@
             user-select: none;
             flex-shrink: 0;
         }
-        .attribute-item .attr-name {
-            flex: 1;
-            font-size: 14px;
-        }
         .attribute-item .drag-handle:active {
             cursor: grabbing;
         }
@@ -67,21 +147,18 @@
             opacity: 0.5;
             background: #e0e0e0;
         }
-        .attribute-item.drag-over {
-            border-bottom: 2px solid #ff6b6b;
-        }
-        .add-section {
+        .add-attr-section {
             display: flex;
             gap: 8px;
-            margin-bottom: 12px;
         }
-        .add-section input {
+        .add-attr-section input {
             flex: 1;
             margin: 0;
+            font-size: 13px;
         }
-        .add-section button {
+        .add-attr-section button {
             margin: 0;
-            padding: 10px 16px;
+            padding: 8px 12px;
         }
     </style>
 </head>
@@ -91,18 +168,26 @@
         <select id="language-select"></select>
     </div>
     
-    <div class="toggle-section">
-        <label>
-            <input type="checkbox" id="toggle-highlight">
-            <span data-i18n="toggleLabel">Highlight elements</span>
-        </label>
+    <div class="url-section">
+        <h2 class="section-title" data-i18n="allowedPages">Allowed pages</h2>
+        <div class="add-url-section">
+            <button id="add-current-url" data-i18n="addCurrentPage">Add current page</button>
+        </div>
+        <p class="no-items" id="no-urls-msg" data-i18n="noAllowedPages" style="display: none;">No allowed pages</p>
+        <ul id="allowed-urls-list"></ul>
+        <div class="manual-add-section">
+            <input type="text" id="manual-url-input" data-i18n-placeholder="addManualPlaceholder" placeholder="*.example.com">
+            <button id="add-manual-url">+</button>
+        </div>
     </div>
     
-    <ul id="attributes-list"></ul>
-    
-    <div class="add-section">
-        <input type="text" id="new-attribute" data-i18n-placeholder="addPlaceholder" placeholder="Add attribute...">
-        <button id="add-btn" data-i18n="addButton">+</button>
+    <div class="attributes-section">
+        <h2 class="section-title" data-i18n="attributesTitle">Attributes</h2>
+        <ul id="attributes-list"></ul>
+        <div class="add-attr-section">
+            <input type="text" id="new-attribute" data-i18n-placeholder="addPlaceholder" placeholder="Add attribute...">
+            <button id="add-btn">+</button>
+        </div>
     </div>
     
     <script src="locales.js"></script>
