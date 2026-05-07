@@ -192,13 +192,21 @@ function debounce(fn, delay) {
 function isUrlAllowed(hostname, patterns) {
     if (!patterns || patterns.length === 0) return false;
     
+    const currentUrl = window.location.href;
+    
     for (const pattern of patterns) {
-        if (pattern.startsWith('*.')) {
+        // Для file:// URL
+        if (pattern.startsWith('file://')) {
+            if (currentUrl.startsWith(pattern)) return true;
+        }
+        // Для wildcard паттернов (*.example.com)
+        else if (pattern.startsWith('*.')) {
             const base = pattern.slice(2);
             if (hostname === base || hostname.endsWith('.' + base)) {
                 return true;
             }
         }
+        // Точное совпадение hostname
         if (hostname === pattern) return true;
     }
     return false;

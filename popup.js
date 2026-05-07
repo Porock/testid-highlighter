@@ -76,6 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // URL functions - defined inside DOMContentLoaded
     cleanUrl = function(url) {
+        if (url.startsWith('file://')) {
+            return url;
+        }
         return url.replace(/^https?:\/\//, '').split('/')[0];
     };
     
@@ -101,8 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update button visibility
         chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
             if (tabs[0] && tabs[0].url) {
-                const currentHost = cleanUrl(tabs[0].url);
-                const isAlreadyAdded = allowedUrls.some(url => url === currentHost);
+                const currentUrl = cleanUrl(tabs[0].url);
+                const isAlreadyAdded = allowedUrls.some(url => url === currentUrl);
                 addCurrentUrlBtn.style.display = isAlreadyAdded ? 'none' : 'inline-block';
             }
         });
